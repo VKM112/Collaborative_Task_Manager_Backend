@@ -1,10 +1,19 @@
 ﻿import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-export function authMiddleware(req: Request, _res: Response, next: NextFunction) {
-  if (!req.headers.authorization) {
-    return next(new Error('Missing authorization token'));
+export interface AuthRequest extends Request {
+  user?: { id: string };
+}
+
+export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+  const token = req.cookies?.token;
+  if (!token) return res.status(401).json({ message: 'Unauthorized' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
+    req.user = { id: decoded.userId };
+    next();
+  } catch {
+    return res.status(401).json({ message: 'Invalid token' });
   }
-  // Add real JWT validation logic here later
-  req.user = { id: 'placeholder' } as any;
-  next();
 }

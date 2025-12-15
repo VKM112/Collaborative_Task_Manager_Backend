@@ -1,11 +1,11 @@
-﻿import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { createTaskHandler, listTasksHandler } from '../controllers/task.controller';
+import { Router } from 'express'
+import { requireAuth } from '../middleware/auth.middleware'
+import { createTaskHandler, listTasksHandler } from '../controllers/task.controller'
 
-const router = Router();
+const router = Router()
 
-router.use(authMiddleware);
-router.get('/', listTasksHandler);
-router.post('/', createTaskHandler);
+router.use(requireAuth)
+router.get('/', listTasksHandler)
+router.post('/', createTaskHandler)
 
-export default router;
+export default router

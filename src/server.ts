@@ -1,16 +1,30 @@
-﻿import http from 'node:http';
-import { Server as SocketServer } from 'socket.io';
+﻿import http from 'http';
+import { Server } from 'socket.io';
 import app from './app';
-import { registerTaskSocket } from './sockets/task.socket';
-import { env } from './config/env';
+
+const PORT = process.env.PORT || 5000;
 
 const server = http.createServer(app);
-const io = new SocketServer(server, { cors: { origin: '*' } });
 
-registerTaskSocket(io);
+export const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  },
+});
 
-const port = Number(env.port()) || 5000;
+io.on('connection', (socket) => {
+  console.log('Socket connected', socket.id);
 
-server.listen(port, () => {
-  console.log(Server listening on port );
+  socket.on('join', (userId: string) => {
+    socket.join(`user-${userId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected', socket.id);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
 });

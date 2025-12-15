@@ -1,22 +1,20 @@
-﻿import 'dotenv/config';
+import 'dotenv/config'
 
-const requiredEnv: Array<keyof NodeJS.ProcessEnv> = ['DATABASE_URL', 'JWT_SECRET', 'PORT'];
-	type Env = {
-  DATABASE_URL: string;
-  JWT_SECRET: string;
-  PORT: string;
-};
+const requiredEnv = ['DATABASE_URL', 'JWT_SECRET', 'PORT', 'GOOGLE_CLIENT_ID'] as const
 
-function getEnv<K extends keyof Env>(key: K): Env[K] {
-  const value = process.env[key];
+type EnvKey = (typeof requiredEnv)[number]
+
+function getEnv(key: EnvKey) {
+  const value = process.env[key]
   if (!value) {
-    throw new Error(Missing required environment variable );
+    throw new Error(`Missing required environment variable: ${key}`)
   }
-  return value as Env[K];
+  return value
 }
 
-export const env = {
-  databaseUrl: () => getEnv('DATABASE_URL'),
-  jwtSecret: () => getEnv('JWT_SECRET'),
-  port: () => getEnv('PORT'),
-};
+export const env: Record<EnvKey, string> = {
+  DATABASE_URL: getEnv('DATABASE_URL'),
+  JWT_SECRET: getEnv('JWT_SECRET'),
+  PORT: getEnv('PORT'),
+  GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID'),
+}
