@@ -14,7 +14,8 @@ export function verifyToken(token: string) {
   return jwt.verify(token, JWT_SECRET)
 }
 
-const isSecureCookie = env.FRONTEND_URL.startsWith('https://')
+const isProduction = process.env.NODE_ENV === 'production'
+const isSecureCookie = isProduction || env.FRONTEND_URL.startsWith('https://')
 
 export function setAuthCookie(res: Response, token: string) {
   res.cookie('token', token, {

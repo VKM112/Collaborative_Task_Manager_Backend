@@ -17,7 +17,8 @@ function createToken(payload) {
 function verifyToken(token) {
     return jsonwebtoken_1.default.verify(token, JWT_SECRET);
 }
-const isSecureCookie = env_1.env.FRONTEND_URL.startsWith('https://');
+const isProduction = process.env.NODE_ENV === 'production';
+const isSecureCookie = isProduction || env_1.env.FRONTEND_URL.startsWith('https://');
 function setAuthCookie(res, token) {
     res.cookie('token', token, {
         httpOnly: true,

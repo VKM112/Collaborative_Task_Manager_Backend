@@ -13,6 +13,9 @@ type RawBodyRequest = Request & { rawBody?: string };
 
 const app = express();
 
+// Express must trust Render's SSL termination so secure cookies work.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 
 app.use(

@@ -14,6 +14,8 @@ const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const cors_2 = require("./config/cors");
 const json_util_1 = require("./utils/json.util");
 const app = (0, express_1.default)();
+// Express must trust Render's SSL termination so secure cookies work.
+app.set('trust proxy', 1);
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: cors_2.handleCorsOrigin,
