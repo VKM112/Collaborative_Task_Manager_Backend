@@ -5,8 +5,6 @@ export function loadEnv() {
   const shouldLoad =
     process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV === 'true'
 
-  // Skip loading the local `.env` in production unless explicitly forced.
-
   if (!shouldLoad) {
     return
   }
@@ -14,7 +12,14 @@ export function loadEnv() {
   const envPath = path.resolve(process.cwd(), '.env')
   const { error } = dotenv.config({ path: envPath })
 
-  if (error && error.code !== 'ENOENT') {
-    throw error
+  if (!error) {
+    return
   }
+
+  const nodeError = error as NodeJS.ErrnoException
+  if (nodeError.code === 'ENOENT') {
+    return
+  }
+
+  throw error
 }
