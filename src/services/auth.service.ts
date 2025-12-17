@@ -31,7 +31,7 @@ async function verifyGoogleToken(idToken: string) {
 
 export async function registerUser(data: { name: string; email: string; password: string }) {
   const hashed = await hashPassword(data.password)
-  const existing = await prisma.user.findUnique({ where: { email: data.email } })
+  const existing = await prisma.user.findFirst({ where: { email: data.email } })
   if (existing) {
     throw new ApiError(409, 'Email already registered')
   }
@@ -45,7 +45,7 @@ export async function registerUser(data: { name: string; email: string; password
 }
 
 export async function loginUser(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } })
+  const user = await prisma.user.findFirst({ where: { email } })
   if (!user) return null
 
   const match = await comparePassword(password, user.password)

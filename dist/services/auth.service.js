@@ -35,7 +35,7 @@ async function verifyGoogleToken(idToken) {
 }
 async function registerUser(data) {
     const hashed = await (0, password_util_1.hashPassword)(data.password);
-    const existing = await prisma_1.default.user.findUnique({ where: { email: data.email } });
+    const existing = await prisma_1.default.user.findFirst({ where: { email: data.email } });
     if (existing) {
         throw new errors_1.ApiError(409, 'Email already registered');
     }
@@ -48,7 +48,7 @@ async function registerUser(data) {
     });
 }
 async function loginUser(email, password) {
-    const user = await prisma_1.default.user.findUnique({ where: { email } });
+    const user = await prisma_1.default.user.findFirst({ where: { email } });
     if (!user)
         return null;
     const match = await (0, password_util_1.comparePassword)(password, user.password);
