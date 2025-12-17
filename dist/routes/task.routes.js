@@ -7,4 +7,6 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.requireAuth);
 router.get('/', task_controller_1.listTasksHandler);
 router.post('/', task_controller_1.createTaskHandler);
+router.put('/:id', task_controller_1.updateTaskHandler);
+router.delete('/:id', task_controller_1.deleteTaskHandler);
 exports.default = router;

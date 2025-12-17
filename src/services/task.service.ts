@@ -53,7 +53,7 @@ export async function updateTask(id: string, data: {
   dueDate?: Date | string
   assignedToId?: string | null
 }) {
-  const normalizedData: Prisma.TaskUpdateInput = {
+  const normalizedData: Prisma.TaskUncheckedUpdateInput = {
     title: data.title,
     priority: data.priority,
     status: data.status,
