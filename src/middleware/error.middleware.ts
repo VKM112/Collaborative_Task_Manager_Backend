@@ -10,7 +10,7 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof ZodError) {
     return res.status(400).json({
       message: 'Invalid request data.',
-      issues: err.errors,
+      issues: err.issues,
     });
   }
 
