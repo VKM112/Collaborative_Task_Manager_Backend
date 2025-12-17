@@ -12,13 +12,33 @@ const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const task_routes_1 = __importDefault(require("./routes/task.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const cors_2 = require("./config/cors");
+const json_util_1 = require("./utils/json.util");
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: cors_2.handleCorsOrigin,
     credentials: true,
 }));
-app.use(express_1.default.json());
+app.use(express_1.default.json({
+    verify: (req, _res, buf) => {
+        req.rawBody = buf.toString();
+    },
+}));
+app.use((err, req, _res, next) => {
+    if (err instanceof SyntaxError && req.rawBody) {
+        const repaired = (0, json_util_1.tryFixLooseJson)(req.rawBody);
+        if (repaired) {
+            try {
+                req.body = JSON.parse(repaired);
+                return next();
+            }
+            catch {
+                // fall through to the default error handler
+            }
+        }
+    }
+    next(err);
+});
 app.use((0, cookie_parser_1.default)());
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/v1/auth', auth_routes_1.default);
