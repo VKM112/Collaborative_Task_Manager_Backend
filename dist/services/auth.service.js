@@ -12,6 +12,7 @@ const google_auth_library_1 = require("google-auth-library");
 const prisma_1 = __importDefault(require("../config/prisma"));
 const password_util_1 = require("../utils/password.util");
 const errors_1 = require("../types/errors");
+const email_util_1 = require("../utils/email.util");
 async function verifyGoogleToken(idToken) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
@@ -34,21 +35,24 @@ async function verifyGoogleToken(idToken) {
     };
 }
 async function registerUser(data) {
+    const normalizedEmail = (0, email_util_1.normalizeEmail)(data.email);
     const hashed = await (0, password_util_1.hashPassword)(data.password);
-    const existing = await prisma_1.default.user.findFirst({ where: { email: data.email } });
+    const existing = await prisma_1.default.user.findFirst({ where: { email: normalizedEmail } });
     if (existing) {
         throw new errors_1.ApiError(409, 'Email already registered');
     }
     return prisma_1.default.user.create({
         data: {
             ...data,
-            password: hashed,
+            email: normalizedEmail,
             provider: 'local',
+            password: hashed,
         },
     });
 }
 async function loginUser(email, password) {
-    const user = await prisma_1.default.user.findFirst({ where: { email } });
+    const normalizedEmail = (0, email_util_1.normalizeEmail)(email);
+    const user = await prisma_1.default.user.findFirst({ where: { email: normalizedEmail } });
     if (!user)
         return null;
     const match = await (0, password_util_1.comparePassword)(password, user.password);
@@ -56,9 +60,10 @@ async function loginUser(email, password) {
 }
 async function loginWithGoogle(idToken) {
     const profile = await verifyGoogleToken(idToken);
+    const normalizedEmail = (0, email_util_1.normalizeEmail)(profile.email);
     const hashed = await (0, password_util_1.hashPassword)(crypto_1.default.randomBytes(32).toString('hex'));
     return prisma_1.default.user.upsert({
-        where: { email: profile.email },
+        where: { email: normalizedEmail },
         update: {
             name: profile.name,
             avatar: profile.avatar,
@@ -67,7 +72,7 @@ async function loginWithGoogle(idToken) {
         },
         create: {
             name: profile.name,
-            email: profile.email,
+            email: normalizedEmail,
             password: hashed,
             avatar: profile.avatar,
             googleId: profile.googleId,
