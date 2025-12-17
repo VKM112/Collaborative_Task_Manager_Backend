@@ -1,4 +1,6 @@
-import 'dotenv/config'
+import { loadEnv } from './loadEnv'
+
+loadEnv()
 
 const requiredEnv = ['DATABASE_URL', 'JWT_SECRET', 'PORT', 'GOOGLE_CLIENT_ID'] as const
 
