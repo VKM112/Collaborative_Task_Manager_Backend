@@ -1,6 +1,7 @@
-﻿import http from 'http';
+import http from 'http';
 import { Server } from 'socket.io';
 import app from './app';
+import { handleCorsOrigin } from './config/cors';
 
 const PORT = process.env.PORT || 5000;
 
@@ -8,7 +9,7 @@ const server = http.createServer(app);
 
 export const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: handleCorsOrigin,
     credentials: true,
   },
 });

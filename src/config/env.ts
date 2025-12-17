@@ -2,7 +2,13 @@ import { loadEnv } from './loadEnv'
 
 loadEnv()
 
-const requiredEnv = ['DATABASE_URL', 'JWT_SECRET', 'PORT', 'GOOGLE_CLIENT_ID'] as const
+const requiredEnv = [
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'PORT',
+  'GOOGLE_CLIENT_ID',
+  'FRONTEND_URL',
+] as const
 
 type EnvKey = (typeof requiredEnv)[number]
 
@@ -19,4 +25,5 @@ export const env: Record<EnvKey, string> = {
   JWT_SECRET: getEnv('JWT_SECRET'),
   PORT: getEnv('PORT'),
   GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID'),
+  FRONTEND_URL: getEnv('FRONTEND_URL'),
 }
