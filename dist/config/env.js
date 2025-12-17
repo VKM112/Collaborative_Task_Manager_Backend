@@ -3,7 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.env = void 0;
 const loadEnv_1 = require("./loadEnv");
 (0, loadEnv_1.loadEnv)();
-const requiredEnv = ['DATABASE_URL', 'JWT_SECRET', 'PORT', 'GOOGLE_CLIENT_ID'];
+const requiredEnv = [
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'PORT',
+    'GOOGLE_CLIENT_ID',
+    'FRONTEND_URL',
+];
 function getEnv(key) {
     const value = process.env[key];
     if (!value) {
@@ -16,4 +22,5 @@ exports.env = {
     JWT_SECRET: getEnv('JWT_SECRET'),
     PORT: getEnv('PORT'),
     GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID'),
+    FRONTEND_URL: getEnv('FRONTEND_URL'),
 };

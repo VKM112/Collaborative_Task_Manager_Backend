@@ -11,23 +11,11 @@ const error_middleware_1 = require("./middleware/error.middleware");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const task_routes_1 = __importDefault(require("./routes/task.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
+const cors_2 = require("./config/cors");
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
-// Fix: Multiple origins + fallback
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://taskflowmanagervkm.netlify.app'
-];
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, etc.)
-        if (!origin)
-            return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        callback(new Error('Not allowed by CORS'));
-    },
+    origin: cors_2.handleCorsOrigin,
     credentials: true,
 }));
 app.use(express_1.default.json());

@@ -7,11 +7,12 @@ exports.io = void 0;
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 const app_1 = __importDefault(require("./app"));
+const cors_1 = require("./config/cors");
 const PORT = process.env.PORT || 5000;
 const server = http_1.default.createServer(app_1.default);
 exports.io = new socket_io_1.Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL,
+        origin: cors_1.handleCorsOrigin,
         credentials: true,
     },
 });
