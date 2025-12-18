@@ -67,7 +67,11 @@ async function updateTaskHandler(req, res, next) {
         if (!task) {
             throw new errors_1.ApiError(404, 'Task not found.');
         }
-        await (0, team_service_1.ensureTeamMembership)(userId, task.teamId);
+        const taskTeamId = task.teamId;
+        if (!taskTeamId) {
+            throw new errors_1.ApiError(500, 'Task missing team context.');
+        }
+        await (0, team_service_1.ensureTeamMembership)(userId, taskTeamId);
         const { teamId, ...body } = req.body;
         const updatedTask = await (0, task_service_1.updateTask)(id, body);
         res.json(updatedTask);
@@ -87,7 +91,11 @@ async function deleteTaskHandler(req, res, next) {
         if (!task) {
             throw new errors_1.ApiError(404, 'Task not found.');
         }
-        await (0, team_service_1.ensureTeamMembership)(userId, task.teamId);
+        const taskTeamId = task.teamId;
+        if (!taskTeamId) {
+            throw new errors_1.ApiError(500, 'Task missing team context.');
+        }
+        await (0, team_service_1.ensureTeamMembership)(userId, taskTeamId);
         const deleted = await (0, task_service_1.deleteTask)(id);
         res.json(deleted);
     }

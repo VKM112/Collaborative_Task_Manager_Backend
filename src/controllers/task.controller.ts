@@ -70,7 +70,12 @@ export async function updateTaskHandler(req: AuthRequest, res: Response, next: N
       throw new ApiError(404, 'Task not found.');
     }
 
-    await ensureTeamMembership(userId, task.teamId);
+    const taskTeamId = task.teamId;
+    if (!taskTeamId) {
+      throw new ApiError(500, 'Task missing team context.');
+    }
+
+    await ensureTeamMembership(userId, taskTeamId);
 
     const { teamId, ...body } = req.body;
     const updatedTask = await updateTask(id, body);
@@ -93,7 +98,12 @@ export async function deleteTaskHandler(req: AuthRequest, res: Response, next: N
       throw new ApiError(404, 'Task not found.');
     }
 
-    await ensureTeamMembership(userId, task.teamId);
+    const taskTeamId = task.teamId;
+    if (!taskTeamId) {
+      throw new ApiError(500, 'Task missing team context.');
+    }
+
+    await ensureTeamMembership(userId, taskTeamId);
 
     const deleted = await deleteTask(id);
     res.json(deleted);
