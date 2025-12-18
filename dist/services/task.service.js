@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createTask = createTask;
 exports.updateTask = updateTask;
 exports.deleteTask = deleteTask;
+exports.getTaskById = getTaskById;
 exports.listTasks = listTasks;
+const errors_1 = require("../types/errors");
 const prisma_1 = __importDefault(require("../config/prisma"));
 const normalizeDueDate = (value) => {
     if (!value)
@@ -20,6 +22,7 @@ async function createTask(data) {
             priority: data.priority,
             status: data.status,
             creatorId: data.creatorId,
+            teamId: data.teamId,
             assignedToId: data.assignedToId ?? data.creatorId,
             description: data.description,
             dueDate: normalizeDueDate(data.dueDate),
@@ -30,6 +33,9 @@ async function createTask(data) {
             },
             creator: {
                 select: { id: true, name: true, email: true },
+            },
+            team: {
+                select: { id: true, name: true },
             },
         },
     });
@@ -53,30 +59,54 @@ async function updateTask(id, data) {
             creator: {
                 select: { id: true, name: true, email: true },
             },
+            team: {
+                select: { id: true, name: true },
+            },
         },
     });
 }
 async function deleteTask(id) {
     return prisma_1.default.task.delete({ where: { id } });
 }
+async function getTaskById(id) {
+    return prisma_1.default.task.findUnique({
+        where: { id },
+        include: {
+            assignedTo: {
+                select: { id: true, name: true, email: true },
+            },
+            creator: {
+                select: { id: true, name: true, email: true },
+            },
+            team: {
+                select: { id: true, name: true },
+            },
+        },
+    });
+}
 async function listTasks(filters) {
-    const where = {};
-    if (filters?.status) {
+    if (!filters.teamId) {
+        throw new errors_1.ApiError(400, 'Team id is required to list tasks.');
+    }
+    const where = {
+        teamId: filters.teamId,
+    };
+    if (filters.status) {
         where.status = filters.status;
     }
-    if (filters?.priority) {
+    if (filters.priority) {
         where.priority = filters.priority;
     }
-    if (filters?.assignedToId) {
+    if (filters.assignedToId) {
         where.assignedToId = filters.assignedToId;
     }
-    if (filters?.creatorId) {
+    if (filters.creatorId) {
         where.creatorId = filters.creatorId;
     }
-    if (filters?.overdue) {
+    if (filters.overdue) {
         where.dueDate = { lt: new Date() };
     }
-    const orderBy = filters?.sortBy ?? 'dueDate';
+    const orderBy = filters.sortBy ?? 'dueDate';
     return prisma_1.default.task.findMany({
         where,
         orderBy: { [orderBy]: 'asc' },
@@ -86,6 +116,9 @@ async function listTasks(filters) {
             },
             creator: {
                 select: { id: true, name: true, email: true },
+            },
+            team: {
+                select: { id: true, name: true },
             },
         },
     });

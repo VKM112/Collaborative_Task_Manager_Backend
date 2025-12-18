@@ -20,6 +20,7 @@ model User {
   assignedTasks Task[] @relation("AssignedTasks")
   teamMemberships TeamMember[]
   sentMessages Message[] @relation("SentMessages")
+  createdTeams Team[] @relation("CreatedTeams")
 }
 
 model Task {

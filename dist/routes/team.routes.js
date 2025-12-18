@@ -1,0 +1,24 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const team_controller_1 = require("../controllers/team.controller");
+const validate_middleware_1 = require("../middleware/validate.middleware");
+const team_validator_1 = require("../validators/team.validator");
+const message_routes_1 = __importDefault(require("./message.routes"));
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.requireAuth);
+router.get('/', team_controller_1.listTeamsHandler);
+router.post('/', (0, validate_middleware_1.validate)(team_validator_1.createTeamSchema), team_controller_1.createTeamHandler);
+router.get('/:teamId', team_controller_1.getTeamHandler);
+router.put('/:teamId', (0, validate_middleware_1.validate)(team_validator_1.updateTeamSchema), team_controller_1.updateTeamHandler);
+router.delete('/:teamId', team_controller_1.deleteTeamHandler);
+router.post('/join', (0, validate_middleware_1.validate)(team_validator_1.joinTeamSchema), team_controller_1.joinTeamHandler);
+router.post('/:teamId/leave', team_controller_1.leaveTeamHandler);
+router.get('/:teamId/members', team_controller_1.listMembersHandler);
+router.delete('/:teamId/members/:memberId', team_controller_1.removeMemberHandler);
+router.use('/:teamId/messages', message_routes_1.default);
+exports.default = router;

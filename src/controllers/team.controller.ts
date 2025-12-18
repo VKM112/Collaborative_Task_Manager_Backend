@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express'
-import type { MembershipRole } from '@prisma/client'
+import { MembershipRole } from '@prisma/client'
 import type { AuthRequest } from '../middleware/auth.middleware'
 import { ApiError } from '../types/errors'
 import {
