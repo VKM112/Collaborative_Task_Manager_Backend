@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/error.middleware';
 import authRoutes from './routes/auth.routes';
 import taskRoutes from './routes/task.routes';
+import teamRoutes from './routes/team.routes';
 import userRoutes from './routes/user.routes';
 import { handleCorsOrigin } from './config/cors';
 import { tryFixLooseJson } from './utils/json.util';
@@ -53,6 +54,7 @@ app.use(cookieParser());
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/teams', teamRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/users', userRoutes);
 

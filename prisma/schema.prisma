@@ -18,6 +18,8 @@ model User {
   updatedAt DateTime @updatedAt
   createdTasks  Task[] @relation("CreatedTasks")
   assignedTasks Task[] @relation("AssignedTasks")
+  teamMemberships TeamMember[]
+  sentMessages Message[] @relation("SentMessages")
 }
 
 model Task {
@@ -29,10 +31,55 @@ model Task {
   status       String
   creatorId    String
   assignedToId String?
+  teamId       String
 
   creator    User  @relation("CreatedTasks", fields: [creatorId], references: [id])
   assignedTo User? @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  team       Team  @relation(fields: [teamId], references: [id])
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Team {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  inviteCode  String        @unique
+  createdById String
+  createdBy   User          @relation("CreatedTeams", fields: [createdById], references: [id])
+  members     TeamMember[]
+  tasks       Task[]
+  messages    Message[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model TeamMember {
+  teamId   String
+  userId   String
+  role     MembershipRole @default(MEMBER)
+  joinedAt DateTime        @default(now())
+
+  team Team @relation(fields: [teamId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([teamId, userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  teamId    String
+  senderId  String
+  createdAt DateTime @default(now())
+
+  team   Team @relation(fields: [teamId], references: [id])
+  sender User @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
 }

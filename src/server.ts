@@ -2,6 +2,9 @@ import http from 'http';
 import { Server } from 'socket.io';
 import app from './app';
 import { handleCorsOrigin } from './config/cors';
+import { registerTaskSocket } from './sockets/task.socket';
+import { registerTeamSocket } from './sockets/team.socket';
+import { socketEvents } from './utils/events';
 
 const PORT = process.env.PORT || 5000;
 
@@ -14,6 +17,9 @@ export const io = new Server(server, {
   },
 });
 
+registerTaskSocket(io);
+registerTeamSocket(io);
+
 io.on('connection', (socket) => {
   console.log('Socket connected', socket.id);
 
@@ -24,6 +30,10 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Socket disconnected', socket.id);
   });
+});
+
+socketEvents.on('team:message', ({ teamId, message }) => {
+  io.to(`team-${teamId}`).emit('team:message', message);
 });
 
 server.listen(PORT, () => {

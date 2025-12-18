@@ -1,7 +1,9 @@
 import type { Prisma } from '@prisma/client'
+import { ApiError } from '../types/errors'
 import prisma from '../config/prisma'
 
 type TaskFilters = {
+  teamId: string
   status?: string
   priority?: string
   assignedToId?: string
@@ -20,6 +22,7 @@ export async function createTask(data: {
   priority: string
   status: string
   creatorId: string
+  teamId: string
   description?: string
   dueDate?: Date | string
   assignedToId?: string
@@ -30,6 +33,7 @@ export async function createTask(data: {
       priority: data.priority,
       status: data.status,
       creatorId: data.creatorId,
+      teamId: data.teamId,
       assignedToId: data.assignedToId ?? data.creatorId,
       description: data.description,
       dueDate: normalizeDueDate(data.dueDate),
@@ -40,6 +44,9 @@ export async function createTask(data: {
       },
       creator: {
         select: { id: true, name: true, email: true },
+      },
+      team: {
+        select: { id: true, name: true },
       },
     },
   })
@@ -72,6 +79,9 @@ export async function updateTask(id: string, data: {
       creator: {
         select: { id: true, name: true, email: true },
       },
+      team: {
+        select: { id: true, name: true },
+      },
     },
   })
 }
@@ -80,26 +90,49 @@ export async function deleteTask(id: string) {
   return prisma.task.delete({ where: { id } })
 }
 
-export async function listTasks(filters?: TaskFilters) {
-  const where: Prisma.TaskWhereInput = {}
+export async function getTaskById(id: string) {
+  return prisma.task.findUnique({
+    where: { id },
+    include: {
+      assignedTo: {
+        select: { id: true, name: true, email: true },
+      },
+      creator: {
+        select: { id: true, name: true, email: true },
+      },
+      team: {
+        select: { id: true, name: true },
+      },
+    },
+  })
+}
 
-  if (filters?.status) {
+export async function listTasks(filters: TaskFilters) {
+  if (!filters.teamId) {
+    throw new ApiError(400, 'Team id is required to list tasks.')
+  }
+
+  const where: Prisma.TaskWhereInput = {
+    teamId: filters.teamId,
+  }
+
+  if (filters.status) {
     where.status = filters.status
   }
-  if (filters?.priority) {
+  if (filters.priority) {
     where.priority = filters.priority
   }
-  if (filters?.assignedToId) {
+  if (filters.assignedToId) {
     where.assignedToId = filters.assignedToId
   }
-  if (filters?.creatorId) {
+  if (filters.creatorId) {
     where.creatorId = filters.creatorId
   }
-  if (filters?.overdue) {
+  if (filters.overdue) {
     where.dueDate = { lt: new Date() }
   }
 
-  const orderBy = filters?.sortBy ?? 'dueDate'
+  const orderBy = filters.sortBy ?? 'dueDate'
 
   return prisma.task.findMany({
     where,
@@ -110,6 +143,9 @@ export async function listTasks(filters?: TaskFilters) {
       },
       creator: {
         select: { id: true, name: true, email: true },
+      },
+      team: {
+        select: { id: true, name: true },
       },
     },
   })
