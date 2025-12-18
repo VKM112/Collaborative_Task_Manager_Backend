@@ -32,11 +32,11 @@ model Task {
   status       String
   creatorId    String
   assignedToId String?
-  teamId       String
+  teamId       String?
 
   creator    User  @relation("CreatedTasks", fields: [creatorId], references: [id])
   assignedTo User? @relation("AssignedTasks", fields: [assignedToId], references: [id])
-  team       Team  @relation(fields: [teamId], references: [id])
+  team       Team? @relation(fields: [teamId], references: [id])  // <- also optional
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
