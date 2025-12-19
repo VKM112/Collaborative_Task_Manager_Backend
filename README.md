@@ -34,8 +34,8 @@ DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE
 JWT_SECRET=<strong-secret>
 JWT_EXPIRES_IN=7d
 PORT=5000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
+NODE_ENV=production
+FRONTEND_URL=<your deployed frontend link>
 GOOGLE_CLIENT_ID=<from Google Cloud>
 GOOGLE_CLIENT_SECRET=<from Google Cloud>
 ```
