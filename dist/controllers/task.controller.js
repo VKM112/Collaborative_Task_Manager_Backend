@@ -14,15 +14,19 @@ async function createTaskHandler(req, res, next) {
         if (!userId) {
             throw new errors_1.ApiError(401, 'Missing user context.');
         }
-        if (!teamId || typeof teamId !== 'string') {
-            throw new errors_1.ApiError(400, 'Team id is required when creating a task.');
+        if (teamId) {
+            if (typeof teamId !== 'string') {
+                throw new errors_1.ApiError(400, 'Invalid team id.');
+            }
+            await (0, team_service_1.ensureTeamMembership)(userId, teamId);
         }
-        await (0, team_service_1.ensureTeamMembership)(userId, teamId);
-        const task = await (0, task_service_1.createTask)({
+        const payload = {
             ...req.body,
             creatorId: userId,
-            teamId,
-        });
+            teamId: teamId ?? undefined,
+            assignedToId: teamId ? req.body.assignedToId : userId,
+        };
+        const task = await (0, task_service_1.createTask)(payload);
         res.json(task);
     }
     catch (error) {
@@ -32,17 +36,21 @@ async function createTaskHandler(req, res, next) {
 async function listTasksHandler(req, res, next) {
     try {
         const userId = req.user?.id;
-        const { status, priority, assignedToId, creatorId, sortBy, overdue, teamId } = req.query;
+        const { status, priority, assignedToId, creatorId, sortBy, overdue, teamId, scope } = req.query;
         const parsedOverdue = overdue === 'true';
-        if (!teamId || typeof teamId !== 'string') {
-            throw new errors_1.ApiError(400, 'Team id is required to fetch tasks.');
-        }
         if (!userId) {
             throw new errors_1.ApiError(401, 'Missing user context.');
         }
-        await (0, team_service_1.ensureTeamMembership)(userId, teamId);
+        if (teamId) {
+            if (typeof teamId !== 'string') {
+                throw new errors_1.ApiError(400, 'Invalid team id.');
+            }
+            await (0, team_service_1.ensureTeamMembership)(userId, teamId);
+        }
         const tasks = await (0, task_service_1.listTasks)({
-            teamId,
+            userId,
+            teamId: teamId,
+            scope: typeof scope === 'string' ? scope : undefined,
             status: status,
             priority: priority,
             assignedToId: assignedToId,
@@ -68,12 +76,15 @@ async function updateTaskHandler(req, res, next) {
             throw new errors_1.ApiError(404, 'Task not found.');
         }
         const taskTeamId = task.teamId;
-        if (!taskTeamId) {
-            throw new errors_1.ApiError(500, 'Task missing team context.');
+        if (taskTeamId) {
+            await (0, team_service_1.ensureTeamMembership)(userId, taskTeamId);
         }
-        await (0, team_service_1.ensureTeamMembership)(userId, taskTeamId);
+        else if (task.creatorId !== userId) {
+            throw new errors_1.ApiError(403, 'You do not have access to this task.');
+        }
         const { teamId, ...body } = req.body;
-        const updatedTask = await (0, task_service_1.updateTask)(id, body);
+        const normalizedBody = taskTeamId ? body : { ...body, assignedToId: userId };
+        const updatedTask = await (0, task_service_1.updateTask)(id, normalizedBody);
         res.json(updatedTask);
     }
     catch (error) {
@@ -92,10 +103,12 @@ async function deleteTaskHandler(req, res, next) {
             throw new errors_1.ApiError(404, 'Task not found.');
         }
         const taskTeamId = task.teamId;
-        if (!taskTeamId) {
-            throw new errors_1.ApiError(500, 'Task missing team context.');
+        if (taskTeamId) {
+            await (0, team_service_1.ensureTeamMembership)(userId, taskTeamId);
         }
-        await (0, team_service_1.ensureTeamMembership)(userId, taskTeamId);
+        else if (task.creatorId !== userId) {
+            throw new errors_1.ApiError(403, 'You do not have access to this task.');
+        }
         const deleted = await (0, task_service_1.deleteTask)(id);
         res.json(deleted);
     }

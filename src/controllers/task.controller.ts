@@ -11,17 +11,22 @@ export async function createTaskHandler(req: AuthRequest, res: Response, next: N
     if (!userId) {
       throw new ApiError(401, 'Missing user context.');
     }
-    if (!teamId || typeof teamId !== 'string') {
-      throw new ApiError(400, 'Team id is required when creating a task.');
+
+    if (teamId) {
+      if (typeof teamId !== 'string') {
+        throw new ApiError(400, 'Invalid team id.');
+      }
+      await ensureTeamMembership(userId, teamId);
     }
 
-    await ensureTeamMembership(userId, teamId);
-
-    const task = await createTask({
+    const payload = {
       ...req.body,
       creatorId: userId,
-      teamId,
-    });
+      teamId: teamId ?? undefined,
+      assignedToId: teamId ? req.body.assignedToId : userId,
+    };
+
+    const task = await createTask(payload);
     res.json(task);
   } catch (error) {
     next(error);
@@ -31,19 +36,23 @@ export async function createTaskHandler(req: AuthRequest, res: Response, next: N
 export async function listTasksHandler(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.id;
-    const { status, priority, assignedToId, creatorId, sortBy, overdue, teamId } = req.query;
+    const { status, priority, assignedToId, creatorId, sortBy, overdue, teamId, scope } = req.query;
     const parsedOverdue = overdue === 'true';
-    if (!teamId || typeof teamId !== 'string') {
-      throw new ApiError(400, 'Team id is required to fetch tasks.');
-    }
     if (!userId) {
       throw new ApiError(401, 'Missing user context.');
     }
 
-    await ensureTeamMembership(userId, teamId);
+    if (teamId) {
+      if (typeof teamId !== 'string') {
+        throw new ApiError(400, 'Invalid team id.');
+      }
+      await ensureTeamMembership(userId, teamId);
+    }
 
     const tasks = await listTasks({
-      teamId,
+      userId,
+      teamId: teamId as string | undefined,
+      scope: typeof scope === 'string' ? (scope as 'team' | 'personal' | 'all') : undefined,
       status: status as string | undefined,
       priority: priority as string | undefined,
       assignedToId: assignedToId as string | undefined,
@@ -71,14 +80,15 @@ export async function updateTaskHandler(req: AuthRequest, res: Response, next: N
     }
 
     const taskTeamId = task.teamId;
-    if (!taskTeamId) {
-      throw new ApiError(500, 'Task missing team context.');
+    if (taskTeamId) {
+      await ensureTeamMembership(userId, taskTeamId);
+    } else if (task.creatorId !== userId) {
+      throw new ApiError(403, 'You do not have access to this task.');
     }
 
-    await ensureTeamMembership(userId, taskTeamId);
-
     const { teamId, ...body } = req.body;
-    const updatedTask = await updateTask(id, body);
+    const normalizedBody = taskTeamId ? body : { ...body, assignedToId: userId };
+    const updatedTask = await updateTask(id, normalizedBody);
     res.json(updatedTask);
   } catch (error) {
     next(error);
@@ -99,11 +109,11 @@ export async function deleteTaskHandler(req: AuthRequest, res: Response, next: N
     }
 
     const taskTeamId = task.teamId;
-    if (!taskTeamId) {
-      throw new ApiError(500, 'Task missing team context.');
+    if (taskTeamId) {
+      await ensureTeamMembership(userId, taskTeamId);
+    } else if (task.creatorId !== userId) {
+      throw new ApiError(403, 'You do not have access to this task.');
     }
-
-    await ensureTeamMembership(userId, taskTeamId);
 
     const deleted = await deleteTask(id);
     res.json(deleted);

@@ -8,7 +8,6 @@ exports.updateTask = updateTask;
 exports.deleteTask = deleteTask;
 exports.getTaskById = getTaskById;
 exports.listTasks = listTasks;
-const errors_1 = require("../types/errors");
 const prisma_1 = __importDefault(require("../config/prisma"));
 const normalizeDueDate = (value) => {
     if (!value)
@@ -85,30 +84,57 @@ async function getTaskById(id) {
     });
 }
 async function listTasks(filters) {
-    if (!filters.teamId) {
-        throw new errors_1.ApiError(400, 'Team id is required to list tasks.');
-    }
-    const where = {
-        teamId: filters.teamId,
-    };
-    if (filters.status) {
-        where.status = filters.status;
-    }
-    if (filters.priority) {
-        where.priority = filters.priority;
-    }
-    if (filters.assignedToId) {
-        where.assignedToId = filters.assignedToId;
-    }
-    if (filters.creatorId) {
-        where.creatorId = filters.creatorId;
-    }
-    if (filters.overdue) {
-        where.dueDate = { lt: new Date() };
-    }
+    const baseWhere = {};
+    if (filters.status)
+        baseWhere.status = filters.status;
+    if (filters.priority)
+        baseWhere.priority = filters.priority;
+    if (filters.assignedToId)
+        baseWhere.assignedToId = filters.assignedToId;
+    if (filters.creatorId)
+        baseWhere.creatorId = filters.creatorId;
+    if (filters.overdue)
+        baseWhere.dueDate = { lt: new Date() };
     const orderBy = filters.sortBy ?? 'dueDate';
+    const scope = filters.scope ?? (filters.teamId ? 'team' : 'all');
+    const memberships = await prisma_1.default.teamMember.findMany({
+        where: { userId: filters.userId },
+        select: { teamId: true },
+    });
+    const ownedTeams = await prisma_1.default.team.findMany({
+        where: { createdById: filters.userId },
+        select: { id: true },
+    });
+    const teamIds = Array.from(new Set([...memberships.map((member) => member.teamId), ...ownedTeams.map((team) => team.id)]));
+    let scopeWhere;
+    if (scope === 'personal') {
+        scopeWhere = { teamId: null, creatorId: filters.userId };
+    }
+    else if (scope === 'team') {
+        if (filters.teamId) {
+            scopeWhere = { teamId: filters.teamId };
+        }
+        else if (teamIds.length) {
+            scopeWhere = { teamId: { in: teamIds } };
+        }
+        else {
+            return [];
+        }
+    }
+    else {
+        const orConditions = [
+            { creatorId: filters.userId },
+            { assignedToId: filters.userId },
+        ];
+        if (teamIds.length) {
+            orConditions.unshift({ teamId: { in: teamIds } });
+        }
+        scopeWhere = { OR: orConditions };
+    }
     return prisma_1.default.task.findMany({
-        where,
+        where: {
+            AND: [baseWhere, scopeWhere],
+        },
         orderBy: { [orderBy]: 'asc' },
         include: {
             assignedTo: {
