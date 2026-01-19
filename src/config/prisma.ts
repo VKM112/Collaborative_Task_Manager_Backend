@@ -11,17 +11,27 @@ if (!connectionString) {
 }
 
 const sslEnv = process.env.DATABASE_SSL
+const sslModeDisabled = /[?&]sslmode=disable/i.test(connectionString)
+const isRender = Boolean(
+  process.env.RENDER ||
+    process.env.RENDER_SERVICE_ID ||
+    process.env.RENDER_EXTERNAL_URL
+)
 const sslRequested =
-  sslEnv === 'true' || sslEnv === '1'
-    ? true
-    : sslEnv === 'false' || sslEnv === '0'
-      ? false
-      : process.env.NODE_ENV === 'production'
-const sslInConnectionString = /[?&]ssl(mode)?=/i.test(connectionString)
+  sslModeDisabled
+    ? false
+    : sslEnv === 'true' || sslEnv === '1'
+      ? true
+      : sslEnv === 'false' || sslEnv === '0'
+        ? false
+        : process.env.NODE_ENV === 'production' || isRender
+const sslStrict =
+  process.env.DATABASE_SSL_STRICT === 'true' ||
+  /[?&]sslmode=verify-(full|ca)/i.test(connectionString)
 
 const pool = new Pool({
   connectionString,
-  ssl: sslRequested && !sslInConnectionString ? { rejectUnauthorized: false } : undefined,
+  ssl: sslRequested ? (sslStrict ? true : { rejectUnauthorized: false }) : undefined,
 })
 
 const adapter = new PrismaPg(pool)
