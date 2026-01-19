@@ -10,8 +10,13 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is required to configure Prisma')
 }
 
+const sslEnv = process.env.DATABASE_SSL
 const sslRequested =
-  process.env.DATABASE_SSL === 'true' || process.env.DATABASE_SSL === '1'
+  sslEnv === 'true' || sslEnv === '1'
+    ? true
+    : sslEnv === 'false' || sslEnv === '0'
+      ? false
+      : process.env.NODE_ENV === 'production'
 const sslInConnectionString = /[?&]ssl(mode)?=/i.test(connectionString)
 
 const pool = new Pool({
