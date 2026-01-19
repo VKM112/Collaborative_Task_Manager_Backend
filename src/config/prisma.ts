@@ -10,21 +10,8 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is required to configure Prisma')
 }
 
-let normalizedConnectionString = connectionString
-let sslMode: string | null = null
-
-try {
-  const url = new URL(connectionString)
-  sslMode = url.searchParams.get('sslmode')?.toLowerCase() ?? null
-  const shouldStripSslMode =
-    sslMode === 'require' || sslMode === 'prefer' || sslMode === 'no-verify'
-  if (shouldStripSslMode) {
-    url.searchParams.delete('sslmode')
-    normalizedConnectionString = url.toString()
-  }
-} catch {
-  // Keep the raw connection string if URL parsing fails.
-}
+const sslModeMatch = connectionString.match(/(?:^|[?&])sslmode=([^&]+)/i)
+const sslMode = sslModeMatch ? decodeURIComponent(sslModeMatch[1]).toLowerCase() : null
 
 const sslEnv = process.env.DATABASE_SSL
 const sslModeDisabled = sslMode === 'disable'
@@ -50,8 +37,12 @@ const sslStrict =
   sslMode === 'verify-ca'
 
 const pool = new Pool({
-  connectionString: normalizedConnectionString,
-  ssl: sslRequested ? (sslStrict ? true : { rejectUnauthorized: false }) : undefined,
+  connectionString,
+  ssl: sslRequested
+    ? sslStrict
+      ? { rejectUnauthorized: true }
+      : { rejectUnauthorized: false }
+    : undefined,
 })
 
 const adapter = new PrismaPg(pool)
